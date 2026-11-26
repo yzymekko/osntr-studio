@@ -150,7 +150,11 @@ export function getEffectiveShortcuts(
   if (includeDotAliases || shortcuts.length <= 1) {
     return shortcuts;
   }
-  // If dot alias exists alongside non-dot primary (e.g. ["**a", "**.a"]), filter out dot variant
+  // When a direct lowercase primary exists alongside a Mac-separated alias (e.g. ["**a", "**.a"] or ["##a", "##_a"]),
+  // keep only the direct primary shortcut when alias compatibility is disabled.
+  if (shortcuts.length === 2 && shortcuts[1].length > shortcuts[0].length) {
+    return [shortcuts[0]];
+  }
   const nonDot = shortcuts.filter((s) => !/^(;d|\*\*|\/\/)\.[a-z]$/.test(s));
   return nonDot.length > 0 ? nonDot : shortcuts;
 }

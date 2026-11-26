@@ -3,9 +3,33 @@
 @layer base {
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    background-color: #f6f7f9;
+    color: #0f172a;
   }
 
   code, pre, .font-mono {
     font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
+}
+
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.375rem;
+  border: 1px solid #cbd5e1;
+  border-bottom-width: 2px;
+  background-color: #f8fafc;
+  padding: 0.125rem 0.45rem;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.35;
+}
+
+.keycap-accent {
+  border-color: #99f6e4;
+  border-bottom-color: #5eead4;
+  background-color: #f0fdfa;
+  color: #115e59;
 }

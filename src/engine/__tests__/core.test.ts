@@ -112,4 +112,64 @@ describe('OSNTR Core Engine', () => {
     expect(imeAhk).toContain('#HotIf !IME_IsKorean()');
     expect(imeAhk).toContain('Hotstring(":CTO:;dg", "◉")');
   });
+
+  it('bulk-transforms trigger prefixes, lowercase separator rules, and set stems cleanly', async () => {
+    const { applyRuleSchemeTransform } = await import('../schemeTransform');
+    const { DEFAULT_RULE_SCHEME } = await import('../../types/osntr');
+
+    // Step 1: Change ; -> :, ** -> ##, // -> \\, lowercase . -> _ (after), circled open d -> z, currency = -> $
+    const nextScheme = {
+      ...DEFAULT_RULE_SCHEME,
+      symbolPrefix: ':',
+      boldPrefix: '##',
+      doubleBoldPrefix: '\\\\',
+      lowercaseSeparator: '_',
+      lowercasePosition: 'after' as const,
+      stemCircledOpen: 'z',
+      currencySuffix: '$',
+    };
+
+    const transformed = applyRuleSchemeTransform(SEED_ENTRIES, DEFAULT_RULE_SCHEME, nextScheme);
+    expect(transformed.length).toBe(408);
+
+    // Check basic symbol & collision 4
+    const bullseye = transformed.find((e) => e.output === '◉')!;
+    expect(bullseye.macShortcut).toBe(':ㅇㅎ');
+    expect(bullseye.ahkStandardShortcuts).toEqual([':Dg']);
+    expect(bullseye.ahkImeShortcuts).toEqual([':dg']);
+
+    // Check lowercase rules across all 3 lowercase sets (after position + '_')
+    const boldLowerA = transformed.find((e) => e.output === '𝗮')!;
+    expect(boldLowerA.macShortcut).toBe('##a_');
+    expect(boldLowerA.ahkStandardShortcuts).toEqual(['##a', '##a_']);
+
+    const circledLowerA = transformed.find((e) => e.output === 'ⓐ')!;
+    expect(circledLowerA.macShortcut).toBe(':za_');
+    expect(circledLowerA.ahkStandardShortcuts).toEqual([':za', ':za_']);
+
+    const bbUpperA = transformed.find((e) => e.output === '𝔸')!;
+    expect(bbUpperA.macShortcut).toBe('\\\\A');
+
+    const won = transformed.find((e) => e.output === '₩')!;
+    expect(won.macShortcut).toBe(':w$');
+
+    // Zero validation errors after clean transformation!
+    const val = validateEntries(transformed);
+    expect(val.errors).toEqual([]);
+
+    // Verify collision detection catches conflicting stem (e.g. 'o' collides with ';or')
+    const conflicting = applyRuleSchemeTransform(SEED_ENTRIES, DEFAULT_RULE_SCHEME, {
+      ...DEFAULT_RULE_SCHEME,
+      stemCircledOpen: 'o',
+    });
+    expect(validateEntries(conflicting).errors.length).toBeGreaterThan(0);
+
+    // Step 2: Reversible back to DEFAULT_RULE_SCHEME!
+    const reverted = applyRuleSchemeTransform(transformed, nextScheme, DEFAULT_RULE_SCHEME);
+    expect(reverted.find((e) => e.output === '◉')!.macShortcut).toBe(';ㅇㅎ');
+    expect(reverted.find((e) => e.output === '𝗮')!.macShortcut).toBe('**.a');
+    expect(reverted.find((e) => e.output === 'ⓐ')!.macShortcut).toBe(';d.a');
+    expect(reverted.find((e) => e.output === '₩')!.macShortcut).toBe(';w=');
+    expect(validateEntries(reverted).errors).toEqual([]);
+  });
 });
